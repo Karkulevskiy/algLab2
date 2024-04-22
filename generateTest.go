@@ -1,11 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
+	"time"
+
+	. "github.com/karkulevskiy/algLab2/models"
 )
 
-func generateTests() {
+func startTests() {
 
+}
+
+func createLogs(t time.Duration, algName string) {
+	fmt.Println(algName, t)
 }
 
 func generatePoints(countPoints int64) []Point {
@@ -13,7 +21,7 @@ func generatePoints(countPoints int64) []Point {
 	for i := int64(0); i < countPoints; i++ {
 		x := rand.Int63n(countPoints)
 		y := rand.Int63n(countPoints)
-		points = append(points, Point{x: x, y: y})
+		points = append(points, Point{X: x, Y: y})
 	}
 	return points
 }
@@ -22,16 +30,16 @@ func generateRectangles(countRectangles int64) []Rectangle {
 	rectangles := make([]Rectangle, countRectangles)
 	for i := int64(0); i < countRectangles; i++ {
 		pointLeft := Point{
-			x: 10 * i,
-			y: 10 * i,
+			X: 10 * i,
+			Y: 10 * i,
 		}
 		pointRight := Point{
-			x: 10 * (2*countRectangles - i),
-			y: 10 * (2*countRectangles - i),
+			X: 10 * (2*countRectangles - i),
+			Y: 10 * (2*countRectangles - i),
 		}
 		rectangles = append(rectangles, Rectangle{
-			leftPoint:  pointLeft,
-			rightPoint: pointRight,
+			LeftPoint:  pointLeft,
+			RightPoint: pointRight,
 		})
 	}
 	return rectangles
