@@ -6,14 +6,30 @@ import (
 	. "github.com/karkulevskiy/algLab2/models"
 )
 
-// Алгоритм на карте
-func TestingMap(rectangles []Rectangle, p Point) {
-	resMap := fillCords(rectangles)
-	//TODO: Доделать поиск точек на map'е
+// MapAlg описывает 2 алг
+type MapAlg struct {
+	CordX []int64   // Сжатые координаты по X
+	CordY []int64   // Сжатые координаты по Y
+	Map   [][]int64 // Построенная карта
+}
+
+// Конструктор типа MapAlg
+func NewMapAlg(rectanle []Rectangle) *MapAlg {
+	return fillCords(rectanle)
+}
+
+// Testing считает сколько прямоугольников попадает в точку
+// P.S. (ну или наборот, я не знаю как правильно сказать)
+func (m *MapAlg) Testing(p Point) int64 {
+	if p.X < m.CordX[0] || p.Y < m.CordY[0] {
+		return 0
+	}
+	x, y := getPrev(m.CordX, p.X), getPrev(m.CordY, p.Y)
+	return m.Map[x][y]
 }
 
 // fillCords заполняет нашу map'у
-func fillCords(rectangles []Rectangle) [][]int64 {
+func fillCords(rectangles []Rectangle) *MapAlg {
 	cordX := map[int64]int64{}
 	cordY := map[int64]int64{}
 
@@ -64,7 +80,12 @@ func fillCords(rectangles []Rectangle) [][]int64 {
 		}
 	}
 
-	return resMap
+	mapAlg := &MapAlg{
+		CordX: sortedX,
+		CordY: sortedY,
+		Map:   resMap,
+	}
+	return mapAlg
 }
 
 // getPrev ищет границу следующей координаты
