@@ -14,13 +14,13 @@ type MapAlg struct {
 }
 
 // Конструктор типа MapAlg
-func NewMapAlg(rectanle []Rectangle) *MapAlg {
-	return fillCords(rectanle)
+func NewMapAlg(rectanles []Rectangle) *MapAlg {
+	return fillCords(rectanles)
 }
 
 // Testing считает сколько прямоугольников попадает в точку
 // P.S. (ну или наборот, я не знаю как правильно сказать)
-func (m *MapAlg) Testing(p Point) int64 {
+func (m *MapAlg) MapTesting(p Point) int64 {
 	if p.X < m.CordX[0] || p.Y < m.CordY[0] {
 		return 0
 	}
