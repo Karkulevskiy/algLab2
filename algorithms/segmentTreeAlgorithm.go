@@ -7,9 +7,11 @@ import (
 )
 
 type PST struct {
-	Rectangles        []Rectangle
-	CompressedCoordsX []int64
-	CompressedCoordsY []int64
+	Rectangles             []Rectangle
+	CompressedCoordsX      []int64
+	CompressedCoordsY      []int64
+	Roots                  []*Node
+	CompressedRootsIndexes []int64
 }
 
 type Node struct {
@@ -19,10 +21,10 @@ type Node struct {
 }
 
 type Action struct {
-	CompressedX int64
-	TopY        int64
-	BottomY     int64
-	IsOpening   bool
+	CompressedIndexesX int64
+	TopY               int64
+	BottomY            int64
+	IsOpening          bool
 }
 
 func NewPSTAlg(rectangles []Rectangle) *PST {
@@ -130,27 +132,60 @@ func (pst *PST) createActions() {
 
 	for _, rect := range pst.Rectangles {
 		openAction := Action{
-			CompressedX: getPoint(pst.CompressedCoordsX, rect.LeftPoint.X),
-			BottomY:     getPoint(pst.CompressedCoordsY, rect.LeftPoint.Y),
-			TopY:        getPoint(pst.CompressedCoordsY, rect.RightPoint.Y+1),
-			IsOpening:   true,
+			CompressedIndexesX: getPoint(pst.CompressedCoordsX, rect.LeftPoint.X),
+			BottomY:            getPoint(pst.CompressedCoordsY, rect.LeftPoint.Y),
+			TopY:               getPoint(pst.CompressedCoordsY, rect.RightPoint.Y+1),
+			IsOpening:          true,
 		}
 		closeAction := Action{
-			CompressedX: getPoint(pst.CompressedCoordsX, rect.RightPoint.X+1),
-			BottomY:     getPoint(pst.CompressedCoordsY, rect.LeftPoint.Y),
-			TopY:        getPoint(pst.CompressedCoordsY, rect.RightPoint.Y+1),
-			IsOpening:   false,
+			CompressedIndexesX: getPoint(pst.CompressedCoordsX, rect.RightPoint.X+1),
+			BottomY:            getPoint(pst.CompressedCoordsY, rect.LeftPoint.Y),
+			TopY:               getPoint(pst.CompressedCoordsY, rect.RightPoint.Y+1),
+			IsOpening:          false,
 		}
 		actions = append(actions, openAction, closeAction)
 	}
-	// TODO: мб нужно будет урезать слайс, чтобы не было TL
+	// TODO: мб нужно будет урезать слайс, чтобы не было TL или ML
 
 	slices.SortFunc(actions, func(first Action, second Action) int {
-		return int(first.CompressedX - second.CompressedX)
+		return int(first.CompressedIndexesX - second.CompressedIndexesX)
 	})
 
+	root := &Node{}
+	prevCompressedIndexX := actions[0].CompressedIndexesX
+
+	for _, action := range actions {
+		if action.CompressedIndexesX != prevCompressedIndexX {
+			pst.Roots = append(pst.Roots, root)
+			pst.CompressedRootsIndexes = append(pst.CompressedRootsIndexes, prevCompressedIndexX)
+			prevCompressedIndexX = action.CompressedIndexesX
+		}
+		if action.IsOpening {
+			root = add(root, 0, int64(len(pst.CompressedCoordsY)), action.BottomY, action.TopY, 1)
+		} else {
+			root = add(root, 0, int64(len(pst.CompressedCoordsY)), action.BottomY, action.TopY, -1)
+		}
+	}
+
+	pst.CompressedRootsIndexes = append(pst.CompressedRootsIndexes, prevCompressedIndexX)
+	pst.Roots = append(pst.Roots, root)
 }
 
+func (pst *PST) PSTTesting(p Point) int64 {
+	if p.X < pst.CompressedCoordsX[0] || p.Y < pst.CompressedCoordsY[0] {
+		return 0
+	}
+
+	x := getPoint(pst.CompressedCoordsX, p.X)
+	y := getPoint(pst.CompressedCoordsY, p.Y)
+
+	root := pst.Roots[getPoint(pst.CompressedCoordsX, x)]
+
+	res := getTotalCover(root, 0, int64(len(pst.CompressedCoordsY)), y)
+	return res
+}
+
+// Бинырный поиск по сжатым координатам
 func getPoint(arr []int64, target int64) int64 {
 	left := int64(0)
 	right := int64(len(arr) - 1)

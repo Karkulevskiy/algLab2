@@ -89,11 +89,16 @@ func fillCords(rectangles []Rectangle) *MapAlg {
 }
 
 // getPrev ищет границу следующей координаты
-func getPrev(coords []int64, target int64) int64 {
-	for i := range int64(len(coords)) {
-		if coords[i] > target {
-			return i
+func getPrev(arr []int64, target int64) int64 {
+	left := int64(0)
+	right := int64(len(arr) - 1)
+	for left <= right {
+		middle := int64((right + left) / 2)
+		if arr[middle] > target {
+			right = middle - 1
+		} else {
+			left = middle + 1
 		}
 	}
-	return int64(len(coords) - 1)
+	return left - 1
 }
