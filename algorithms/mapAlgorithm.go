@@ -6,7 +6,6 @@ import (
 	. "github.com/karkulevskiy/algLab2/models"
 )
 
-// MapAlg описывает 2 алг
 type MapAlg struct {
 	CordX []int64   // Сжатые координаты по X
 	CordY []int64   // Сжатые координаты по Y
@@ -20,11 +19,11 @@ func NewMapAlg(rectanles []Rectangle) *MapAlg {
 
 // Testing считает сколько прямоугольников попадает в точку
 // P.S. (ну или наборот, я не знаю как правильно сказать)
-func (m *MapAlg) MapTesting(p Point) int64 {
-	if p.X < m.CordX[0] || p.Y < m.CordY[0] {
+func (m *MapAlg) Test(p Point) int64 {
+	x, y := getLower(m.CordX, p.X), getLower(m.CordY, p.Y)
+	if x == -1 || y == -1 {
 		return 0
 	}
-	x, y := getPrev(m.CordX, p.X), getPrev(m.CordY, p.Y)
 	return m.Map[x][y]
 }
 
@@ -34,25 +33,28 @@ func fillCords(rectangles []Rectangle) *MapAlg {
 	cordY := map[int64]int64{}
 
 	// Добавляем точки в map'ы
-	for i, rect := range rectangles {
-		cordX[int64(i*3)] = rect.LeftPoint.X
-		cordX[int64(i*3)+1] = rect.RightPoint.X
-		cordX[int64(i*3)+2] = rect.RightPoint.X + 1
-		cordY[int64(i*3)] = rect.LeftPoint.Y
-		cordY[int64(i*3)+1] = rect.RightPoint.Y
-		cordY[int64(i*3)+2] = rect.RightPoint.Y + 1
+	for _, rect := range rectangles {
+		cordX[rect.LeftPoint.X] = rect.LeftPoint.X
+		cordX[rect.RightPoint.X] = rect.RightPoint.X
+		cordY[rect.LeftPoint.Y] = rect.LeftPoint.Y
+		cordY[rect.RightPoint.Y] = rect.RightPoint.Y
 	}
 
 	// Задаем слайсы для отсортированных данных
 	sortedX := make([]int64, len(cordX))
 	sortedY := make([]int64, len(cordY))
 
-	for i, v := range cordX {
-		sortedX[i] = v
+	// Добавляем в слайсы из map'ов
+	i := 0
+	for k := range cordX {
+		sortedX[i] = k
+		i++
 	}
 
-	for i, v := range cordY {
-		sortedY[i] = v
+	i = 0
+	for k := range cordX {
+		sortedY[i] = k
+		i++
 	}
 
 	// Сортируем слайсы
@@ -68,12 +70,12 @@ func fillCords(rectangles []Rectangle) *MapAlg {
 	// Заполняем нашу map'у
 	for _, rect := range rectangles {
 		// Находим границы для поиска по Y координате
-		downBoundY := getPrev(sortedY, rect.LeftPoint.Y)
-		upBoundY := getPrev(sortedY, rect.RightPoint.Y)
+		downBoundY := getLower(sortedY, rect.LeftPoint.Y)
+		upBoundY := getLower(sortedY, rect.RightPoint.Y)
 		for y := downBoundY; y < upBoundY; y++ {
 			// Находим границы для поиска по X координате
-			downBoundX := getPrev(sortedX, rect.LeftPoint.X)
-			upBoundX := getPrev(sortedX, rect.RightPoint.X)
+			downBoundX := getLower(sortedX, rect.LeftPoint.X)
+			upBoundX := getLower(sortedX, rect.RightPoint.X)
 			for x := downBoundX; x < upBoundX; x++ {
 				resMap[y][x]++
 			}
@@ -88,17 +90,21 @@ func fillCords(rectangles []Rectangle) *MapAlg {
 	return mapAlg
 }
 
-// getPrev ищет границу следующей координаты
-func getPrev(arr []int64, target int64) int64 {
-	left := int64(0)
-	right := int64(len(arr) - 1)
-	for left <= right {
-		middle := int64((right + left) / 2)
-		if arr[middle] > target {
-			right = middle - 1
+// getLower ищет границу следующей координаты
+func getLower(arr []int64, target int64) int64 {
+	start := int64(0)
+	end := int64(len(arr))
+	step := int64(0)
+	for end > 0 {
+		cur := start
+		step = end / 2
+		cur += step
+		if target >= arr[cur] {
+			start = cur + 1
+			end -= step + 1
 		} else {
-			left = middle + 1
+			end = step
 		}
 	}
-	return left - 1
+	return start - 1
 }

@@ -93,26 +93,28 @@ func (pst *PST) compressCoords() {
 	cordY := map[int64]int64{}
 
 	// Добавляем точки в map'ы
-	for i, rect := range pst.Rectangles {
-		cordX[int64(i*3)] = rect.LeftPoint.X
-		cordX[int64(i*3)+1] = rect.RightPoint.X
-		cordX[int64(i*3)+2] = rect.RightPoint.X + 1
-		cordY[int64(i*3)] = rect.LeftPoint.Y
-		cordY[int64(i*3)+1] = rect.RightPoint.Y
-		cordY[int64(i*3)+2] = rect.RightPoint.Y + 1
-	}
 
+	for _, rect := range pst.Rectangles {
+		cordX[rect.LeftPoint.X] = rect.LeftPoint.X
+		cordX[rect.RightPoint.X] = rect.RightPoint.X
+		cordY[rect.LeftPoint.Y] = rect.LeftPoint.Y
+		cordY[rect.RightPoint.Y] = rect.RightPoint.Y
+	}
 	// Задаем слайсы для отсортированных данных
 	sortedX := make([]int64, len(cordX))
 	sortedY := make([]int64, len(cordY))
 
 	// Добавляем в слайсы из map'ов
-	for i, v := range cordX {
-		sortedX[i] = v
+	i := 0
+	for k := range cordX {
+		sortedX[i] = k
+		i++
 	}
 
-	for i, v := range cordY {
-		sortedY[i] = v
+	i = 0
+	for k := range cordX {
+		sortedY[i] = k
+		i++
 	}
 
 	// Сортируем слайсы
@@ -124,7 +126,7 @@ func (pst *PST) compressCoords() {
 	pst.CompressedCoordsY = sortedY
 }
 
-func (pst *PST) createActions() {
+func (pst *PST) CreateActions() {
 	// Сжимаем координаты
 	pst.compressCoords()
 
@@ -132,20 +134,19 @@ func (pst *PST) createActions() {
 
 	for _, rect := range pst.Rectangles {
 		openAction := Action{
-			CompressedIndexesX: getPoint(pst.CompressedCoordsX, rect.LeftPoint.X),
-			BottomY:            getPoint(pst.CompressedCoordsY, rect.LeftPoint.Y),
-			TopY:               getPoint(pst.CompressedCoordsY, rect.RightPoint.Y+1),
+			CompressedIndexesX: getLower(pst.CompressedCoordsX, rect.LeftPoint.X),
+			BottomY:            getLower(pst.CompressedCoordsY, rect.LeftPoint.Y),
+			TopY:               getLower(pst.CompressedCoordsY, rect.RightPoint.Y),
 			IsOpening:          true,
 		}
 		closeAction := Action{
-			CompressedIndexesX: getPoint(pst.CompressedCoordsX, rect.RightPoint.X+1),
-			BottomY:            getPoint(pst.CompressedCoordsY, rect.LeftPoint.Y),
-			TopY:               getPoint(pst.CompressedCoordsY, rect.RightPoint.Y+1),
+			CompressedIndexesX: getLower(pst.CompressedCoordsX, rect.RightPoint.X),
+			BottomY:            getLower(pst.CompressedCoordsY, rect.LeftPoint.Y),
+			TopY:               getLower(pst.CompressedCoordsY, rect.RightPoint.Y),
 			IsOpening:          false,
 		}
 		actions = append(actions, openAction, closeAction)
 	}
-	// TODO: мб нужно будет урезать слайс, чтобы не было TL или ML
 
 	slices.SortFunc(actions, func(first Action, second Action) int {
 		return int(first.CompressedIndexesX - second.CompressedIndexesX)
@@ -160,11 +161,13 @@ func (pst *PST) createActions() {
 			pst.CompressedRootsIndexes = append(pst.CompressedRootsIndexes, prevCompressedIndexX)
 			prevCompressedIndexX = action.CompressedIndexesX
 		}
+
 		if action.IsOpening {
 			root = add(root, 0, int64(len(pst.CompressedCoordsY)), action.BottomY, action.TopY, 1)
 		} else {
 			root = add(root, 0, int64(len(pst.CompressedCoordsY)), action.BottomY, action.TopY, -1)
 		}
+
 	}
 
 	pst.CompressedRootsIndexes = append(pst.CompressedRootsIndexes, prevCompressedIndexX)
@@ -172,30 +175,16 @@ func (pst *PST) createActions() {
 }
 
 func (pst *PST) PSTTesting(p Point) int64 {
-	if p.X < pst.CompressedCoordsX[0] || p.Y < pst.CompressedCoordsY[0] {
+	x := getLower(pst.CompressedCoordsX, p.X)
+	y := getLower(pst.CompressedCoordsY, p.Y)
+
+	if x == -1 || y == -1 {
 		return 0
 	}
 
-	x := getPoint(pst.CompressedCoordsX, p.X)
-	y := getPoint(pst.CompressedCoordsY, p.Y)
-
-	root := pst.Roots[getPoint(pst.CompressedCoordsX, x)]
+	root := pst.Roots[getLower(pst.CompressedRootsIndexes, x)]
 
 	res := getTotalCover(root, 0, int64(len(pst.CompressedCoordsY)), y)
 	return res
-}
 
-// Бинырный поиск по сжатым координатам
-func getPoint(arr []int64, target int64) int64 {
-	left := int64(0)
-	right := int64(len(arr) - 1)
-	for left <= right {
-		middle := int64((right + left) / 2)
-		if arr[middle] > target {
-			right = middle - 1
-		} else {
-			left = middle + 1
-		}
-	}
-	return left - 1
 }

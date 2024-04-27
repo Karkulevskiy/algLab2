@@ -1,4 +1,4 @@
-package main
+package contest
 
 import (
 	"fmt"
@@ -106,10 +106,8 @@ func (pst *PST) compressCoords() {
 	for _, rect := range pst.Rectangles {
 		cordX[rect.LeftPoint.X] = rect.LeftPoint.X
 		cordX[rect.RightPoint.X] = rect.RightPoint.X
-		cordX[rect.RightPoint.X+1] = rect.RightPoint.X + 1
 		cordY[rect.LeftPoint.Y] = rect.LeftPoint.Y
 		cordY[rect.RightPoint.Y] = rect.RightPoint.Y
-		cordY[rect.RightPoint.Y+1] = rect.RightPoint.Y + 1
 	}
 	// Задаем слайсы для отсортированных данных
 	sortedX := make([]int64, len(cordX))
@@ -158,7 +156,6 @@ func (pst *PST) createActions() {
 		}
 		actions = append(actions, openAction, closeAction)
 	}
-	// TODO: мб нужно будет урезать слайс, чтобы не было TL или ML
 
 	slices.SortFunc(actions, func(first Action, second Action) int {
 		return int(first.CompressedIndexesX - second.CompressedIndexesX)
@@ -173,11 +170,13 @@ func (pst *PST) createActions() {
 			pst.CompressedRootsIndexes = append(pst.CompressedRootsIndexes, prevCompressedIndexX)
 			prevCompressedIndexX = action.CompressedIndexesX
 		}
+
 		if action.IsOpening {
 			root = add(root, 0, int64(len(pst.CompressedCoordsY)), action.BottomY, action.TopY, 1)
 		} else {
 			root = add(root, 0, int64(len(pst.CompressedCoordsY)), action.BottomY, action.TopY, -1)
 		}
+
 	}
 
 	pst.CompressedRootsIndexes = append(pst.CompressedRootsIndexes, prevCompressedIndexX)
