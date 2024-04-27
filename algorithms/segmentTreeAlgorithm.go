@@ -6,6 +6,9 @@ import (
 	. "github.com/karkulevskiy/algLab2/models"
 )
 
+// Тот же самый код, что и в контесте. Только в контесте пришлось
+// все типы переность в один файлик, а тут есть разделение по папкам + пришлось имзенить один метод с private на public (для тестов)
+
 type PST struct {
 	Rectangles             []Rectangle
 	CompressedCoordsX      []int64

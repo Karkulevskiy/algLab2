@@ -19,12 +19,14 @@ const (
 	FileName             = "results.txt"
 )
 
+// Запуск всех тестов
 func main() {
 	TestBruteForceAlg()
 	TestMapAlg()
 	TestSegmentTreeAlg()
 }
 
+// Тестирование алгоритма Дерева
 func TestSegmentTreeAlg() {
 	fmt.Printf("\n\n\n")
 	writeData("Segment Tree Algorithm testing: QUERYTIME | BUILDTIME | R, P count")
@@ -65,10 +67,11 @@ func TestSegmentTreeAlg() {
 	writeData("\n\n\n")
 }
 
+// Тестирование алгоритма Карты
 func TestMapAlg() {
 	fmt.Printf("\n\n\n")
 	writeData("Map Algorithm testing: QUERYTIME | BUILDTIME | R, P count")
-	for i := int64(1); i < N; i += 35 {
+	for i := int64(1); i < N; i += 100 {
 		rectangles := generateRectangles(i)
 		points := generatePoints(i)
 
@@ -105,10 +108,11 @@ func TestMapAlg() {
 	writeData("\n\n\n")
 }
 
+// Тестирование алгоритма Брутфорс
 func TestBruteForceAlg() {
 	fmt.Printf("\n\n\n")
 	writeData("BruteForce Algorithm testing")
-	for i := int64(1); i < N; i += 35 {
+	for i := int64(1); i < N; i += 100 {
 		rectangles := generateRectangles(i)
 		points := generatePoints(i)
 
@@ -136,6 +140,7 @@ func TestBruteForceAlg() {
 	writeData("\n\n\n")
 }
 
+// Логирование результатов
 func writeData(data string) {
 	fmt.Println(data)
 	file, err := os.OpenFile(FileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
